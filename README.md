@@ -1,0 +1,167 @@
+# NeuroTune — BCI-Controlled Music System Using EEG Signals
+
+**230103002 – Jyotirmoy Das | 230103032 – Gyan Ankur Das**  
+Department of Information Technology, Gauhati University
+
+A Brain-Computer Interface (BCI) system that classifies mental states from EEG signals in real time and adapts music playback accordingly — calm binaural beats when relaxed, energetic beats when active.
+
+---
+
+## How It Works
+
+```
+EEG Headset (or DEAP dataset)
+        │
+        ▼
+  Raw EEG Signal
+        │
+  Butterworth Bandpass Filter
+        │
+        ├──► Alpha band (8–13 Hz)  ──┐
+        └──► Beta  band (13–30 Hz) ──┤
+                                     │
+                            Band Power (FFT)
+                                     │
+                         SVM Classifier + Alpha/Beta Ratio
+                                     │
+                         Majority-Vote Smoother (3 windows)
+                                     │
+                    ┌────────────────┴─────────────────┐
+                    │                                   │
+              RELAXED state                       ACTIVE state
+              → Calm Music (10 Hz)                → Energetic Music (18 Hz)
+```
+
+### Signal Processing Pipeline
+
+| Step | Technique | Purpose |
+|------|-----------|---------|
+| Filtering | Butterworth Bandpass Filter | Isolate alpha (8–13 Hz) and beta (13–30 Hz) |
+| Feature Extraction | FFT → Mean Band Power | Quantify frequency-domain activity |
+| Classification | Alpha/Beta ratio + RBF-SVM | Determine RELAXED vs ACTIVE state |
+| Smoothing | Majority vote over 3 windows | Prevent rapid music switching |
+
+---
+
+## Project Structure
+
+```
+NeuroTune/
+├── src/
+│   ├── step1_load_deap.py        # Load & preprocess DEAP EEG dataset
+│   ├── step2_visualize_eeg.py    # Plot raw EEG signal
+│   ├── step3_extract_features.py # Extract alpha & beta band power
+│   ├── step4_classify_state.py   # Train SVM classifier
+│   ├── step5_music_controller.py # Music playback controller
+│   ├── step6_realtime_demo.py    # Full real-time pipeline simulation
+│   ├── step7_full_report.py      # Generate final analysis report
+│   └── run_all.py                # Run the full pipeline in one command
+├── music/
+│   ├── calm/                     # Calm .mp3 tracks (10 Hz binaural beats)
+│   └── energetic/                # Energetic .mp3 tracks (18 Hz binaural beats)
+├── data/
+│   ├── raw/deap/                 # Place DEAP .dat files here (e.g. s22.dat)
+│   └── processed/                # Auto-generated: features, labels, SVM model
+└── output/                       # Auto-generated: charts and report images
+```
+
+---
+
+## Dataset
+
+This project uses the **DEAP dataset** (Database for Emotion Analysis using Physiological Signals).
+
+- 32-channel EEG, 128 Hz sampling rate
+- 40 trials per subject, each 63 seconds
+- First 3 seconds (384 samples) are a baseline and are removed
+- **Arousal label** (labels column 1) is used: `< 5` → RELAXED, `≥ 5` → ACTIVE
+
+Download the dataset from [www.eecs.qmul.ac.uk/mmv/datasets/deap](http://www.eecs.qmul.ac.uk/mmv/datasets/deap) and place subject files (e.g. `s22.dat`) in `data/raw/deap/`.
+
+---
+
+## Setup
+
+### Requirements
+
+```bash
+pip install numpy scipy matplotlib scikit-learn pygame
+```
+
+### Run the full pipeline
+
+```bash
+python3 src/run_all.py
+```
+
+### Or run step by step (from the project root)
+
+```bash
+python3 src/step1_load_deap.py        # Load DEAP data → data/processed/
+python3 src/step2_visualize_eeg.py    # Visualize raw EEG signal
+python3 src/step3_extract_features.py # Extract alpha/beta features
+python3 src/step4_classify_state.py   # Train & evaluate SVM
+python3 src/step5_music_controller.py # Test music controller
+python3 src/step6_realtime_demo.py    # Run real-time demo
+python3 src/step7_full_report.py      # Generate full analysis report
+```
+
+---
+
+## Results
+
+| Metric | Value |
+|--------|-------|
+| SVM Classifier Accuracy (5-fold CV) | **98.3%** |
+| Rule-based / SVM agreement rate | **89.8%** |
+| EEG channels used | 32 (first channel for real-time demo) |
+| Sampling rate | 128 Hz |
+| Window size | 2 seconds (256 samples) |
+| Step size | 1 second (sliding window) |
+
+---
+
+## Using a Real EEG Headset
+
+Replace the pre-loaded DEAP array in `step6_realtime_demo.py` with a live headset stream.
+
+**NeuroSky MindWave:**
+```bash
+pip install mindwave-python
+```
+```python
+import mindwave
+headset = mindwave.Headset('/dev/tty.MindWave')
+data = headset.raw_value   # one raw EEG sample
+```
+
+**Muse Headband:**
+```bash
+pip install muselsl
+```
+```python
+from muselsl import stream, list_muses
+muses = list_muses()
+stream(muses[0]['address'])
+```
+
+---
+
+## Dependencies
+
+| Package | Purpose |
+|---------|---------|
+| `numpy` | Array operations and data I/O |
+| `scipy` | Butterworth filter, FFT |
+| `matplotlib` | Plots and report figures |
+| `scikit-learn` | SVM classifier, cross-validation |
+| `pygame` | Real-time MP3 audio playback (optional) |
+
+---
+
+## References
+
+1. Wolpaw et al., "Brain–Computer Interfaces for Communication and Control," *IEEE*, 2004.
+2. Nicolas-Alonso & Gomez-Gil, "Brain Computer Interfaces: A Review," *Sensors*, 2012.
+3. Teplan, "Fundamentals of EEG Measurement," *Measurement Science Review*, 2002.
+4. Koelstra et al., "DEAP: A Database for Emotion Analysis using Physiological Signals," *IEEE Trans. Affective Computing*, 2012.
