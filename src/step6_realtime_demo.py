@@ -36,66 +36,6 @@ except ImportError:
 CALM_FOLDER      = "music/calm"
 ENERGETIC_FOLDER = "music/energetic"
 
-# ── Auto-generate prerequisites if missing ────────────────────────────────────
-if not os.path.exists("data/sampling_rate.npy") or not os.path.exists("data/eeg_session.npy"):
-    import pickle
-    _subj = pickle.load(open("data/raw/deap/s22.dat", "rb"), encoding="latin1")
-    _eeg  = _subj["data"][:, :32, 384:]
-    _lbl  = np.where(_subj["labels"][:, 1] >= 5, 1, 0)
-    os.makedirs("data/processed", exist_ok=True)
-    np.save("data/processed/eeg_data.npy", _eeg)
-    np.save("data/processed/labels.npy",   _lbl)
-    np.save("data/sampling_rate.npy", np.array([128.0]))
-    np.save("data/eeg_session.npy",   _eeg[0, 0])
-
-if not os.path.exists("data/processed/deap_svm.pkl"):
-    import pickle as _pkl
-    from scipy.signal import butter as _butter, filtfilt as _filtfilt
-    from sklearn.model_selection import train_test_split as _tts
-    from sklearn.preprocessing import StandardScaler as _SS
-    from sklearn.svm import SVC as _SVC
-
-    if not os.path.exists("data/processed/eeg_data.npy"):
-        _p = _pkl.load(open("data/raw/deap/s22.dat", "rb"), encoding="latin1")
-        _e = _p["data"][:, :32, 384:]
-        _l = np.where(_p["labels"][:, 1] >= 5, 1, 0)
-        os.makedirs("data/processed", exist_ok=True)
-        np.save("data/processed/eeg_data.npy", _e)
-        np.save("data/processed/labels.npy",   _l)
-        np.save("data/sampling_rate.npy", np.array([128.0]))
-        np.save("data/eeg_session.npy",   _e[0, 0])
-
-    if not os.path.exists("data/processed/features.npy"):
-        _ed  = np.load("data/processed/eeg_data.npy")
-        _lbs = np.load("data/processed/labels.npy")
-        _fp  = int(np.load("data/sampling_rate.npy")[0])
-        def _bpow_pre(s, lo, hi):
-            nyq = _fp / 2.0
-            b, a = _butter(4, [lo/nyq, hi/nyq], btype="band")
-            return np.mean(_filtfilt(b, a, s) ** 2)
-        _ft, _fl = [], []
-        _ws = 2 * _fp
-        for _ti, _tr in enumerate(_ed):
-            _sg, _i = _tr[0], 0
-            while _i + _ws <= len(_sg):
-                _a = _bpow_pre(_sg[_i:_i+_ws], 8, 13)
-                _b = _bpow_pre(_sg[_i:_i+_ws], 13, 30)
-                _ft.append([_a, _b, _a / (_b + 1e-10)])
-                _fl.append(_lbs[_ti])
-                _i += _fp
-        os.makedirs("data/processed", exist_ok=True)
-        np.save("data/processed/features.npy", np.array(_ft))
-        np.save("data/processed/feature_labels.npy", np.array(_fl))
-
-    _X = np.load("data/processed/features.npy")
-    _y = np.load("data/processed/feature_labels.npy")
-    _Xtr, _, _ytr, _ = _tts(_X, _y, test_size=0.2, random_state=42)
-    _sc = _SS()
-    _clf = _SVC(kernel="rbf")
-    _clf.fit(_sc.fit_transform(_Xtr), _ytr)
-    _pkl.dump({"model": _clf, "scaler": _sc},
-              open("data/processed/deap_svm.pkl", "wb"))
-
 # ── EEG Parameters ────────────────────────────────────────────────────────────
 FS          = int(np.load("data/sampling_rate.npy")[0])   # 128 Hz from DEAP
 WINDOW_SEC  = 2
@@ -123,8 +63,11 @@ def band_power(signal, lowcut, highcut, fs):
 
 def classify_state(alpha_power, beta_power):
     ratio = alpha_power / (beta_power + 1e-10)
-    feat  = _SVM_SCALER.transform([[alpha_power, beta_power, ratio]])
-    pred  = _SVM_MODEL.predict(feat)[0]
+    feat      = _SVM_SCALER.transform([[alpha_power, beta_power, ratio]])
+    svm_pred  = _SVM_MODEL.predict(feat)[0]          # 0=relaxed, 1=active
+    ratio_pred = 0 if ratio > 1 else 1               # alpha>beta → relaxed, beta>alpha → active
+    # If SVM and ratio agree, use that result; otherwise trust the ratio rule
+    pred  = svm_pred if svm_pred == ratio_pred else ratio_pred
     state = "RELAXED" if pred == 0 else "ACTIVE"
     return state, ratio
 

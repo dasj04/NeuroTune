@@ -23,52 +23,6 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.svm import SVC
 from sklearn.metrics import accuracy_score, classification_report
 
-# ── Auto-generate prerequisites if missing ────────────────────────────────────
-if not all(os.path.exists(p) for p in [
-        "data/processed/features.npy", "data/processed/feature_labels.npy",
-        "data/times.npy", "data/alpha_powers.npy", "data/beta_powers.npy"]):
-    from scipy.signal import butter, filtfilt as _filtfilt
-
-    if not os.path.exists("data/processed/eeg_data.npy"):
-        _subj = pickle.load(open("data/raw/deap/s22.dat", "rb"), encoding="latin1")
-        _eeg  = _subj["data"][:, :32, 384:]
-        _lbl  = np.where(_subj["labels"][:, 1] >= 5, 1, 0)
-        os.makedirs("data/processed", exist_ok=True)
-        np.save("data/processed/eeg_data.npy", _eeg)
-        np.save("data/processed/labels.npy",   _lbl)
-        np.save("data/sampling_rate.npy", np.array([128.0]))
-        np.save("data/eeg_session.npy",   _eeg[0, 0])
-
-    _eeg_data = np.load("data/processed/eeg_data.npy")
-    _labels   = np.load("data/processed/labels.npy")
-    _fs_pre   = int(np.load("data/sampling_rate.npy")[0])
-
-    def _band_power(sig, lo, hi):
-        nyq = _fs_pre / 2.0
-        b, a = butter(4, [lo/nyq, hi/nyq], btype="band")
-        return np.mean(_filtfilt(b, a, sig) ** 2)
-
-    _feats, _flabels, _t0, _a0, _b0 = [], [], [], [], []
-    _ws = 2 * _fs_pre
-    for _ti, _trial in enumerate(_eeg_data):
-        _sig, _i = _trial[0], 0
-        while _i + _ws <= len(_sig):
-            _a = _band_power(_sig[_i:_i+_ws], 8, 13)
-            _b = _band_power(_sig[_i:_i+_ws], 13, 30)
-            _feats.append([_a, _b, _a / (_b + 1e-10)])
-            _flabels.append(_labels[_ti])
-            if _ti == 0:
-                _t0.append((_i + _ws / 2) / _fs_pre)
-                _a0.append(_a)
-                _b0.append(_b)
-            _i += _fs_pre
-    os.makedirs("data/processed", exist_ok=True)
-    np.save("data/processed/features.npy",      np.array(_feats))
-    np.save("data/processed/feature_labels.npy", np.array(_flabels))
-    np.save("data/times.npy",        np.array(_t0))
-    np.save("data/alpha_powers.npy", np.array(_a0))
-    np.save("data/beta_powers.npy",  np.array(_b0))
-
 # ── Load features ──────────────────────────────────────────────────────────────
 X = np.load("data/processed/features.npy")
 y = np.load("data/processed/feature_labels.npy")

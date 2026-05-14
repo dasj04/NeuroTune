@@ -14,18 +14,6 @@ import os
 
 os.chdir(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
 
-# ── Auto-generate prerequisites if processed data is missing ───────────────────
-if not os.path.exists("data/processed/eeg_data.npy"):
-    import pickle
-    _subj = pickle.load(open("data/raw/deap/s22.dat", "rb"), encoding="latin1")
-    _eeg  = _subj["data"][:, :32, 384:]
-    _lbl  = np.where(_subj["labels"][:, 1] >= 5, 1, 0)
-    os.makedirs("data/processed", exist_ok=True)
-    np.save("data/processed/eeg_data.npy", _eeg)
-    np.save("data/processed/labels.npy",   _lbl)
-    np.save("data/sampling_rate.npy", np.array([128.0]))
-    np.save("data/eeg_session.npy",   _eeg[0, 0])
-
 # ── Load data ──────────────────────────────────────────────────────────────────
 print("Loading DEAP EEG data...")
 trial = 0

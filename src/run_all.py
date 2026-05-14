@@ -9,12 +9,11 @@ SRC_DIR  = os.path.dirname(os.path.abspath(__file__))
 BASE_DIR = os.path.dirname(SRC_DIR)
 
 steps = [
-    ("step1_load_deap.py",        "Loading DEAP data"),
-    ("step3_extract_features.py", "Extracting features"),
-    ("step4_classify_state.py",   "Classifying mental states"),
-    ("step5_music_controller.py", "Running music controller"),
-    ("step6_realtime_demo.py",    "Real-time pipeline demo"),
-    ("step7_full_report.py",      "Generating final report"),
+    ("step1_load_deap.py",        "Step 1 — Loading DEAP EEG dataset"),
+    ("step3_extract_features.py", "Step 3 — Extracting alpha/beta band features"),
+    ("step4_classify_state.py",   "Step 4 — Training SVM & classifying mental states"),
+    ("step6_realtime_demo.py",    "Step 6 — Real-time pipeline demo (EEG → music)"),
+    ("step7_full_report.py",      "Step 7 — Generating full analysis report"),
 ]
 
 os.makedirs(os.path.join(BASE_DIR, "data"),   exist_ok=True)

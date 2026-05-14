@@ -2,14 +2,9 @@ import pickle
 import numpy as np
 import os
 
+FILE_PATH = "data/raw/deap/s01.dat"
+
 os.chdir(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
-
-# ==========================================================
-# STEP 1 — LOAD DEAP EEG DATASET
-# ==========================================================
-
-# Path to DEAP subject file
-FILE_PATH = "data/raw/deap/s22.dat"
 
 print("Loading DEAP dataset..."+ FILE_PATH + "\n")
 
