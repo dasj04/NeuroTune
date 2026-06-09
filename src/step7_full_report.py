@@ -151,7 +151,7 @@ transitions = np.sum(np.diff(states) != 0)
 summary_text = (
     f"⑦  MUSIC CONTROL OUTPUT SUMMARY\n\n"
     f"  Session Duration : 60 seconds     |  "
-    f"Sampling Rate : 256 Hz     |  "
+    f"Sampling Rate : 128 Hz     |  "
     f"Window Size : 2 seconds     |  "
     f"Windows Analyzed : {len(states)}\n\n"
     f"  🟢  RELAXED state detected : {relaxed_pct:.1f}% of session  →  "
