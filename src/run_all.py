@@ -10,6 +10,7 @@ BASE_DIR = os.path.dirname(SRC_DIR)
 
 steps = [
     ("step1_load_deap.py",        "Step 1 — Loading DEAP EEG dataset"),
+    ("step2_visualize_eeg.py",    "Step 2 — Visualizing raw EEG signal"),
     ("step3_extract_features.py", "Step 3 — Extracting alpha/beta band features"),
     ("step4_classify_state.py",   "Step 4 — Training SVM & classifying mental states"),
     ("step6_realtime_demo.py",    "Step 6 — Real-time pipeline demo (EEG → music)"),
