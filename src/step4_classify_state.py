@@ -48,7 +48,7 @@ X_test  = scaler.transform(X_test)
 # Train SVM
 # ==========================================================
 
-model = SVC(kernel="rbf")
+model = SVC(kernel="rbf", class_weight="balanced")  # handles imbalanced arousal labels
 print("Training SVM classifier...")
 model.fit(X_train, y_train)
 
@@ -83,8 +83,8 @@ X0     = np.column_stack([alpha_powers, beta_powers, ratio])
 X0_sc  = scaler.transform(X0)
 states = model.predict(X0_sc)
 
-# Majority-vote smoothing with a window of 5 samples
-k = 2
+# Majority-vote smoothing with a window of 3 samples
+k = 1
 smoothed_states = np.array([
     1 if np.mean(states[max(0, i-k):min(len(states), i+k+1)]) >= 0.5 else 0
     for i in range(len(states))

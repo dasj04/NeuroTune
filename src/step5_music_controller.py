@@ -67,36 +67,35 @@ class MusicController:
     def play_music(self, state):
         """Switch music if mental state changes."""
         state_name = "relaxed" if state == 0 else "active"
-        
+    
         if state_name == self.current_state:
             return   # Same state — continue current track
 
-        # State has changed → switch music
+    # State has changed → switch music
         self.transitions += 1
-        old_state = self.current_state
+        old_state = self.current_state          # still needed for history
         self.current_state = state_name
         self.current_track = self.get_random_track(state_name)
         self.play_count[state_name] += 1
 
         if PLAY_AUDIO:
-            # Real playback logic
             folder = CALM_FOLDER if state_name == "relaxed" else ENERGETIC_FOLDER
             tracks = [f for f in os.listdir(folder) if f.endswith(".mp3")]
             if tracks:
                 track_path = os.path.join(folder, random.choice(tracks))
                 pygame.mixer.music.load(track_path)
-                pygame.mixer.music.play(-1)   # -1 = loop
+                pygame.mixer.music.play(-1)
 
         icon   = "🟢" if state_name == "relaxed" else "🔴"
         symbol = "♫ " if state_name == "relaxed" else "⚡"
-        print(f"{icon} State changed: {str(old_state).upper():>7} → {state_name.upper():<7} "
-              f" {symbol} Now playing: {self.current_track}")
-        
+        print(f"{icon} State changed: {(old_state or 'none').upper():>7} → {state_name.upper():<7} "
+          f" {symbol} Now playing: {self.current_track}")
+    
         self.history.append({
-            "from": old_state,
-            "to":   state_name,
-            "track": self.current_track
-        })
+        "from":  old_state or "none",   # store clean string, not None
+        "to":    state_name,
+        "track": self.current_track
+    })
 
     def get_summary(self):
         total = len(states)

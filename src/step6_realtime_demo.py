@@ -133,7 +133,7 @@ def run_realtime_demo():
         vote_buffer.append(raw_state)
         r_votes = vote_buffer.count("RELAXED")
         a_votes = vote_buffer.count("ACTIVE")
-        voted_state = "RELAXED" if r_votes > a_votes else "ACTIVE"
+        voted_state = "RELAXED" if r_votes >= a_votes else "ACTIVE"
         vote_str = f"R={r_votes} A={a_votes}/{len(vote_buffer)}"
 
         # ── STEP 5: Control music on voted-state flip only ─────────────────
